@@ -1,19 +1,22 @@
-// src/app/api/books/route.ts
-import { NextResponse } from 'next/server';
-import { books } from '../../data/books';
+
+import { NextResponse } from "next/server";
+import dbConnect from "../../../libs/mongoose";
+import Book from "../../../models/Book";
+
+
 
 // GET /api/books - Return all books
 export async function GET() {
   try {
+    await dbConnect();
+    const books = await Book.find({});
     return NextResponse.json(books);
-  } catch (err) {
-    console.error('Error fetching books:', err);
-    return NextResponse.json(
-      { error: 'Failed to fetch books' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    return NextResponse.json({ error: "Failed to fetch books" }, { status: 500 });
   }
 }
+
 
 // Future implementation notes:
 // - Connect to a database (e.g., PostgreSQL, MongoDB)
