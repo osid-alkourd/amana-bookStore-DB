@@ -32,11 +32,13 @@ export default function BookDetailPage() {
         const data = await res.json();
         setBook(data);
 
-        // ✅ Reviews still come from local file
-        const bookReviewsData = reviews.filter(
-          (review) => review.bookId === id
+        // ✅ Fetch reviews from MongoDB
+        const resReviews = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/reviews/${id}`
         );
-        setBookReviews(bookReviewsData);
+        if (!resReviews.ok) throw new Error("Failed to fetch reviews");
+        const reviewData = await resReviews.json();
+        setBookReviews(reviewData);
       } catch (err: any) {
         setError(err.message);
       } finally {
