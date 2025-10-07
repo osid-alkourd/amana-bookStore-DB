@@ -4,13 +4,15 @@ import Review from "@/models/Review";
 
 export async function GET(
   request: Request,
-  { params }: { params: { bookId: string } }
+  context: { params: Promise<{ bookId: string }> } // ✅ make params async
 ) {
   try {
     await dbConnect();
-    const { bookId } = params;
 
-    // Find all reviews for a specific bookId
+    // ✅ await params before using
+    const { bookId } = await context.params;
+
+    // Find all reviews for this bookId
     const reviews = await Review.find({ bookId }).lean();
 
     return NextResponse.json(reviews, { status: 200 });
