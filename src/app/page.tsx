@@ -1,43 +1,38 @@
-// src/app/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import BookGrid from "./components/BookGrid";
-import { Book } from './types'; // adjust path if needed
+import { Book } from "./types";
 
 export default function HomePage() {
-const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch books from API
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL; // ✅ read from env
-
-        // relative path works in Next.js (no need for NEXT_PUBLIC_BASE_URL in dev)
+        const baseUrl =
+          process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
         const res = await fetch(`${baseUrl}/api/books`);
         if (!res.ok) throw new Error("Failed to fetch books");
         const data = await res.json();
+        console.log("✅ Books fetched:", data.length);
         setBooks(data);
       } catch (error) {
-        console.error("Failed to fetch books:", error);
+        console.error("❌ Failed to fetch books:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchBooks();
   }, []);
 
   const handleAddToCart = (bookId: string) => {
     console.log(`Added book ${bookId} to cart`);
-    // In a real app: update cart state or call API
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Welcome Section */}
       <section className="text-center bg-blue-100 p-8 rounded-lg mb-12 shadow-md">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-2">
           Welcome to the Amana Bookstore!
@@ -48,7 +43,6 @@ const [books, setBooks] = useState<Book[]>([]);
         </p>
       </section>
 
-      {/* Book Grid */}
       {loading ? (
         <p className="text-center">Loading books...</p>
       ) : (
