@@ -1,22 +1,37 @@
-import mongoose from "mongoose";
+import mongoose, { Mongoose } from "mongoose";
 
-// Do NOT read env at the top-level and throw immediately
-// Instead, check only when connecting
-let cached = (global as any).mongoose || { conn: null, promise: null };
+const MONGODB_URI: string = process.env.MONGODB_URI || "";
 
-export default async function dbConnect() {
-  const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  throw new Error("⚠️ Please add MONGODB_URI to your environment variables");
+}
 
-  if (!MONGODB_URI) {
-    throw new Error("⚠️ MONGODB_URI is not defined. Make sure it's in your .env.local or environment variables.");
-  }
+type MongooseCache = {
+  conn: Mongoose | null;
+  promise: Promise<Mongoose> | null;
+};
 
+// Reuse connection in dev to avoid multiple connections
+declare global {
+  var mongooseCache: MongooseCache | undefined;
+}
+
+const globalWithMongoose = global as typeof globalThis & {
+  mongooseCache?: MongooseCache;
+};
+
+const cached: MongooseCache =
+  globalWithMongoose.mongooseCache || { conn: null, promise: null };
+
+export default async function dbConnect(): Promise<Mongoose> {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    // ✅ TypeScript now knows it's always a string
+    cached.promise = mongoose.connect(MONGODB_URI).then((m) => m);
   }
 
   cached.conn = await cached.promise;
+  globalWithMongoose.mongooseCache = cached;
   return cached.conn;
 }
