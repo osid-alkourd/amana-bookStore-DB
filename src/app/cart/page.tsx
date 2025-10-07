@@ -1,4 +1,3 @@
-// src/app/cart/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,50 +8,36 @@ import { Book, CartItem as CartItemType } from '../types';
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<{ book: Book; quantity: number }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || window.location.origin;
 
   useEffect(() => {
-    const fetchCartBooks = async () => {
+    // ✅ Only run on client
+    if (typeof window !== 'undefined') {
       try {
         const storedCart = localStorage.getItem('cart');
-        if (!storedCart) {
-          setCartItems([]);
-          return;
+        if (storedCart) {
+          const cart: CartItemType[] = JSON.parse(storedCart);
+          const fetchBooks = async () => {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/books`);
+            const books: Book[] = await res.json();
+            const itemsWithBooks = cart
+              .map(item => {
+                const book = books.find(b => b.id === item.bookId);
+                return book ? { book, quantity: item.quantity } : null;
+              })
+              .filter((item): item is { book: Book; quantity: number } => item !== null);
+            setCartItems(itemsWithBooks);
+          };
+          fetchBooks();
         }
-
-        const cart: CartItemType[] = JSON.parse(storedCart);
-
-        // Fetch all books in parallel from MongoDB API
-        const responses = await Promise.all(
-          cart.map(item =>
-            fetch(`${baseUrl}/api/books/${item.bookId}`).then(res =>
-              res.ok ? res.json() : null
-            )
-          )
-        );
-
-        const validBooks = responses
-          .map((book, i) =>
-            book ? { book, quantity: cart[i].quantity } : null
-          )
-          .filter((item): item is { book: Book; quantity: number } => item !== null);
-
-        setCartItems(validBooks);
-      } catch (err) {
-        console.error('❌ Failed to load cart items:', err);
-        setError('Failed to load your cart. Please try again.');
-      } finally {
-        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to load cart:', error);
       }
-    };
-
-    fetchCartBooks();
-  }, [baseUrl]);
+    }
+    setIsLoading(false);
+  }, []);
 
   const updateQuantity = (bookId: string, newQuantity: number) => {
+    if (typeof window === 'undefined') return;
     if (newQuantity < 1) return;
 
     const updatedItems = cartItems.map(item =>
@@ -60,7 +45,6 @@ export default function CartPage() {
     );
     setCartItems(updatedItems);
 
-    // Update localStorage
     const cartForStorage = updatedItems.map(item => ({
       id: `${item.book.id}-${Date.now()}`,
       bookId: item.book.id,
@@ -73,6 +57,8 @@ export default function CartPage() {
   };
 
   const removeItem = (bookId: string) => {
+    if (typeof window === 'undefined') return;
+
     const updatedItems = cartItems.filter(item => item.book.id !== bookId);
     setCartItems(updatedItems);
 
@@ -88,6 +74,8 @@ export default function CartPage() {
   };
 
   const clearCart = () => {
+    if (typeof window === 'undefined') return;
+
     setCartItems([]);
     localStorage.removeItem('cart');
     window.dispatchEvent(new CustomEvent('cartUpdated'));
@@ -100,14 +88,6 @@ export default function CartPage() {
 
   if (isLoading) {
     return <div className="text-center py-10">Loading...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-10 text-red-600 font-semibold">
-        {error}
-      </div>
-    );
   }
 
   return (
@@ -127,7 +107,7 @@ export default function CartPage() {
       ) : (
         <>
           <div className="bg-white rounded-lg shadow-md">
-            {cartItems.map(item => (
+            {cartItems.map((item) => (
               <CartItem
                 key={item.book.id}
                 item={item}
