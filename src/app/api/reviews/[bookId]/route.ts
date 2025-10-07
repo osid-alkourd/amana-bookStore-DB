@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/libs/mongoose";
-import Review from "@/models/Review";
+import dbConnect from "../../../../libs/mongoose";
+import Review from "../../../../models/Review";
 
 export async function GET(
-  request: Request,
-  context: { params: Promise<{ bookId: string }> } // ✅ make params async
+  _request: Request,
+  context: { params: Promise<{ bookId: string }> } // ✅ treat params as Promise
 ) {
   try {
     await dbConnect();
 
-    // ✅ await params before using
+    // ✅ Safely await params (required by Next.js)
     const { bookId } = await context.params;
 
-    // Find all reviews for this bookId
     const reviews = await Review.find({ bookId }).lean();
 
     return NextResponse.json(reviews, { status: 200 });
