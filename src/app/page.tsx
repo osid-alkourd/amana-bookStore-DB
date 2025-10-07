@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from "react";
 import BookGrid from "./components/BookGrid";
+import { Book } from './types'; // adjust path if needed
 
 export default function HomePage() {
-  const [books, setBooks] = useState<any[]>([]);
+const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch books from API

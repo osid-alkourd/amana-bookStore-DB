@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { reviews } from "../../data/reviews";
+// import { reviews } from "../../data/reviews";
 import { Book, CartItem, Review } from "../../types";
 import Image from "next/image";
 
@@ -39,8 +39,12 @@ export default function BookDetailPage() {
         if (!resReviews.ok) throw new Error("Failed to fetch reviews");
         const reviewData = await resReviews.json();
         setBookReviews(reviewData);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unexpected error occurred");
+        }
       } finally {
         setIsLoading(false);
       }
